@@ -45,29 +45,31 @@ def _calc_datagrad_on_defense(defense, data):
     "device, def_cls", itertools.product(devices, nograd_defenses))
 def test_bpda_on_nograd_defense(device, def_cls):
     defense = def_cls(**defense_kwargs[def_cls])
+    defense.to(device)
 
     defense = BPDAWrapper(defense, forwardsub=_identity)
-    _calc_datagrad_on_defense(defense, defense_data[def_cls])
+    _calc_datagrad_on_defense(defense, defense_data[def_cls].to(device))
 
     defense = BPDAWrapper(defense, backward=_straight_through_backward)
-    _calc_datagrad_on_defense(defense, defense_data[def_cls])
+    _calc_datagrad_on_defense(defense, defense_data[def_cls].to(device))
 
 
 @pytest.mark.parametrize(
     "device, def_cls", itertools.product(devices, withgrad_defenses))
 def test_bpda_on_withgrad_defense(device, def_cls):
     defense = def_cls(**defense_kwargs[def_cls])
+    defense.to(device)
 
     grad_from_self = _calc_datagrad_on_defense(
-        defense, defense_data[def_cls])
+        defense, defense_data[def_cls].to(device))
 
     defense_with_idenity_backward = BPDAWrapper(defense, forwardsub=_identity)
     grad_from_identity_backward = _calc_datagrad_on_defense(
-        defense_with_idenity_backward, defense_data[def_cls])
+        defense_with_idenity_backward, defense_data[def_cls].to(device))
 
     defense_with_self_backward = BPDAWrapper(defense, forwardsub=defense)
     grad_from_self_backward = _calc_datagrad_on_defense(
-        defense_with_self_backward, defense_data[def_cls])
+        defense_with_self_backward, defense_data[def_cls].to(device))
 
     assert not torch_allclose(grad_from_identity_backward, grad_from_self)
     assert torch_allclose(grad_from_self_backward, grad_from_self)
@@ -79,6 +81,7 @@ def test_bpda_on_withgrad_defense(device, def_cls):
 def test_bpda_on_activations(device, func):
     data = vecdata.detach().clone()
     data = data - data.mean()
+    data = data.to(device)
 
     grad_from_self = _calc_datagrad_on_defense(func, data)
 
@@ -122,6 +125,7 @@ def test_bpda_nograd_on_multi_input(device, func):
         z_ = z.detach().requires_grad_()
 
     net = nn.Sequential(func, DummyNet())
+    net.to(device)
 
     with torch.enable_grad():
         loss_ = net(z_).sum()

@@ -139,6 +139,6 @@ class BPDAWrapper(FunctionWrapper):
             @staticmethod
             def backward(ctx, *grad_outputs):
                 inputs = ctx.saved_tensors
-                return backward_fn(inputs, grad_outputs)
+                return backward_fn(*grad_outputs, *inputs)
 
         return Func

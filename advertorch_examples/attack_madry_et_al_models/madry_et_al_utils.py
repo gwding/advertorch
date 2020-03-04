@@ -145,9 +145,9 @@ def get_madry_et_al_tf_model(dataname, device="cuda"):
         return new_forward
 
     def _wrap_backward(backward):
-        def new_backward(inputs_val, logits_grad_val):
+        def new_backward(logits_grad_val, inputs_val):
             return _process_grads_val(backward(
-                *logits_grad_val, _process_inputs_val(*inputs_val)))
+                logits_grad_val, _process_inputs_val(inputs_val)))
         return new_backward
 
 
